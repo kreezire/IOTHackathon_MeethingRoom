@@ -12,7 +12,7 @@ stocks = ['AAPL','GOOG','ADBE','MSFT','AMZN','TWTR','ADSK','VFINX','NVDA','TXN']
 
 # Where to open a connection to the badge
 # See https://wiki.corp.adobe.com/pages/viewpage.action?spaceKey=tech2017&title=How+to+Reuse+the+IoT+Badge
-badge_serial_port = 'COM6'
+badge_serial_port = 'COM3'
 
 class State:
 	FREE = 1
@@ -61,17 +61,57 @@ class MeetingRoom:
 	def __init__(self):
 		self.name = "EKLAVYA"
 		self.state = State.FREE
-		self.statusTill = "1 hr"
-	
+		self.freeTill = self.getFreeTime()
+		self.bookedTill = 0
+		
 	def setName(self, str):
 		self.name = str
 		
+	def setTime(self, num):
+		self.time = int(num)
+		
+	def occupy(self):
+		self.state = State.BOOKED_OCCUPIED
+		
+	def getFreeTime(self):
+		return int(60)
+		
 	def tryBook(self):
+		global badge
+		mins = 15
+		hrs = 0
 		if self.state == State.FREE:
-			self.state = State.BOOKED_OCCUPIED
+			while True:
+				badge.threeLineRoomStatusDisplay("Enter Time", "%s:%s" % (str(hrs), str(mins)), "2 for + 3 for -")
+				btnPressed = getButtonPress(badge)
+				if btnPressed == 2:
+					mins = mins + 15
+					if mins == 60:
+						mins = 0
+						hrs += 1
+				elif btnPressed == 4:
+					if mins > 15:
+						mins = mins - 15
+					else:
+						if hrs > 1:
+							mins = 45
+							hrs -= 1
+				elif btnPressed == 8:
+					if (hrs*60 + mins) > self.freeTill:
+						badge.threeLineRoomStatusDisplay("Available for", "%s hrs :%s mins " % (str(self.freeTill/60), str(self.freeTill%60)), "Please Try Again")
+						time.sleep(1)
+					else:
+						self.state = State.BOOKED_UNOCCUPIED
+						self.bookedTill = hrs*60 + mins
+						self.freeTill = 0
+					break
+				else:
+					nop
 			
 	def freeUp(self):
 		self.state = State.FREE
+		self.bookedTill = 0
+		self.freeTill = self.getFreeTime()
 		
 	def updateRoomStatus(self):
 		nop
@@ -80,6 +120,10 @@ class MeetingRoom:
 		
 	def getMeetingName(self):
 		return "Ice Cream Party"
+		
+	def convertTime(self):
+		self.minutes = self.time %60
+		self.hours = self.time/60
 		
 room = MeetingRoom()
 room.setName('EKLAVYA')
@@ -173,6 +217,7 @@ class Badge:
 			#	self.blink( green if (change > 0) else red )
 		except ValueError:
 			self.blink([0,0,0])
+			
 	def threeLineRoomStatusDisplay(self, firstline, secondline, thirdline):
 		
 		self.sendStr('o_clear;o_font("sys5x7");o_2x')
@@ -193,16 +238,16 @@ class Badge:
 		if room.state == State.FREE:
 			self.setBothLEDColor(ColorCode.green)
 			#self.bookedDisplayIter=0
-			self.threeLineRoomStatusDisplay(room.name, "Free", "Till "+room.statusTill)
+			self.threeLineRoomStatusDisplay(room.name, "Free", "Till %s hrs %s mins" % (str(room.freeTill/60), str(room.freeTill%60)))
 			
-		elif room.state == State.BOOKED_OCCUPIED or room.state == BOOKED_UNOCCUPIED:
+		elif room.state == State.BOOKED_OCCUPIED or room.state == State.BOOKED_UNOCCUPIED:
 			if room.state == State.BOOKED_OCCUPIED:
 				self.setBothLEDColor(ColorCode.red)
 			else:
 				self.setBothLEDColor(ColorCode.yellow)
 			#self.bookedDisplayIter=(self.bookedDisplayIter+1)%2
 			#if self.bookedDisplayIter<1:
-			self.threeLineRoomStatusDisplay(room.name, "Booked", "Till "+room.statusTill)
+			self.threeLineRoomStatusDisplay(room.name, "Booked", "Till %s hrs %s mins" % (str(room.bookedTill/60), str(room.bookedTill%60)))
 			#	self.sendStr('o_clear;o_font("sys5x7");o_1x')
 			#	hpos = 0  # Center
 				#self.sendStr('o_cursor(%d,0);o_print("%s")' % (hpos, room.getMeetingName()))
@@ -233,37 +278,43 @@ class Badge:
 			elif btn == 4:
 				nop
 			elif btn == 8:
+				room.occupy()
 				nop
 			elif btn == 16:
-				nop
+				room.freeUp()
 			else:
 				nop
+		elif room.state == State.BOOKED_UNOCCUPIED:
+			if btn == 8:
+				room.occupy()
+			if btn == 16:
+				room.freeUp()
 		elif room.state == State.BOOKED_OCCUPIED:
-			if btn == 1:
+			if btn == 16:
 				room.freeUp()
 
-def test():
-	q = loadQuotes()
-	b = Badge()
-	b.displayQuote(q['GOOG'])
-
-def doStuff():
-	badge = Badge()
+def getButtonPress(badge):
+	btnPressed = -1
 	while True:
-		badge.displayRoomStatus()
-		btnPressed = -1
-		while True:
-			ret = badge.sendStr("print buttons")
-			l = ret.split('\n')
+		ret = badge.sendStr("print buttons")
+		l = ret.split('\n')
+		if l > 0:
 			if l[1].find('>') == -1:
 				btnPressed = int(l[1])
 				debugPrint("return val = %d\n" % btnPressed)
 				if btnPressed != 0:
 					break
+	return btnPressed
+
+badge = Badge()
+
+def doStuff():
+	global badge
+	while True:
+		badge.displayRoomStatus()
+		btnPressed = getButtonPress(badge)
 		if btnPressed != -1:
-			debugPrint("Reached here\n")
-			badge.sendStr('clr; o_2x; o_font("sys5x7"); o_println("Pressed=%d");' % btnPressed)
-			time.sleep(1)
+			#debugPrint("Reached here\n")
 			badge.buttonPressed(btnPressed)
 	
 doStuff()
