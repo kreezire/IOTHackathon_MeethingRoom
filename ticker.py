@@ -12,7 +12,7 @@ stocks = ['AAPL','GOOG','ADBE','MSFT','AMZN','TWTR','ADSK','VFINX','NVDA','TXN']
 
 # Where to open a connection to the badge
 # See https://wiki.corp.adobe.com/pages/viewpage.action?spaceKey=tech2017&title=How+to+Reuse+the+IoT+Badge
-badge_serial_port = 'COM3'
+badge_serial_port = 'COM6'
 
 class State:
 	FREE = 1
@@ -48,16 +48,22 @@ def loadQuotes():
 
 class MeetingRoom:
 	def __init__(self):
-		self.name = ""
+		self.name = "EKLAVYA"
+		self.status = State.FREE
+		self.statusTill = "1 hr"
 	
 	def setName(self, str):
 		self.name = str
-
+	def updateRoomStatus(self):
+		self.status = State.BOOKED_OCCUPIED
+		self.statusTill = "0.5 hr"
+	def getMeetingName(self):
+		return "Ice Cream Party"
 class Badge:
 	def __init__(self):
 		self.port = serial.Serial(badge_serial_port, baudrate=9600,timeout=1)
 		self.lastreply = self.port.read(100)
-
+		self.bookedDisplayIter = 0
 	def sendStr(self, s):
 		self.port.write(s + '\r')
 		# By waiting to read back the echoed string along
@@ -126,20 +132,47 @@ class Badge:
 				self.blink( green if (change > 0) else red )
 		except ValueError:
 			self.blink(blue)
-			
+	def threeLineRoomStatusDisplay(self, firstline, secondline, thirdline):
+		
+		self.sendStr('o_clear;o_font("sys5x7");o_2x')
+		hpos = (128 - len(firstline)*12) / 2  # Center
+		self.sendStr('o_cursor(%d,0);o_print("%s")' % (hpos, firstline))
+		hpos = (128 - len(secondline)*12) / 2  # Center
+		self.sendStr('o_cursor(%d,3);o_print("%s")' % (hpos, secondline))	
+		self.sendStr('o_1x')
+		hpos = (128 - len(thirdline)*6) / 2  # Center
+		self.sendStr('o_cursor(%d,6);o_print("%s")' % (hpos, thirdline))
 	def display(self, status, room):
 		if status == State.FREE:
 			self.sendStr("o_2x")
 			self.sendStr('o_println("%s")' % room.name)
 			self.sendStr('o_println("ITS FREE")')
-			
-	def displayStuff(self, str):
-		self.sendStr("clr")
-		self.sendStr('o_font("sys5x7")')
+	
+	
+	def displayRoomStatus(self):
 		room = MeetingRoom()
-		room.setName('EKLAVYA')
-		self.display(State.FREE, room)
-		time.sleep(1)
+		room.updateRoomStatus()
+		
+		if room.status == State.FREE:
+			self.bookedDisplayIter=0
+			self.threeLineRoomStatusDisplay(room.name, "Free", "Till "+room.statusTill)
+		elif room.status == State.BOOKED_OCCUPIED or room.status == BOOKED_UNOCCUPIED:
+			self.bookedDisplayIter=(self.bookedDisplayIter+1)%2
+			if self.bookedDisplayIter<1:
+				self.threeLineRoomStatusDisplay(room.name, "Booked", "Till "+room.statusTill)
+			else:
+				self.sendStr('o_clear;o_font("sys5x7");o_1x')
+				hpos = 0  # Center
+				self.sendStr('o_cursor(%d,0);o_print("%s")' % (hpos, room.getMeetingName()))
+		else:
+			self.sendStr("clr")
+			self.sendStr('o_font("sys5x7")')
+			room.setName('EKLAVYA')
+			self.display(State.FREE, room)
+			time.sleep(1)
+			self.threeLineRoomStatusDisplay("A","B","C")
+		time.sleep(2)
+	
 
 def test():
 	q = loadQuotes()
@@ -149,11 +182,11 @@ def test():
 def doStuff():
 	#quotes = loadQuotes()
 	badge = Badge()
-	badge.displayStuff("cc")
+	while True:
+		badge.displayRoomStatus()
 	#delay = 60 / len(quotes.keys())
 	#for stock in sorted(quotes.keys()):
 	#		badge.displayQuote(quotes[stock])
 	#		time.sleep(delay)
 
-while True:
-	doStuff()
+doStuff()
