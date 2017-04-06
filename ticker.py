@@ -66,6 +66,7 @@ class MeetingRoom:
 		self.freeTill = self.getFreeTime()
 		self.bookedTill = 0
 		self.emalID="vipaggar@adobe.com"
+		
 	def setName(self, str):
 		self.name = str
 		
@@ -106,6 +107,7 @@ class MeetingRoom:
 						self.state = State.BOOKED_UNOCCUPIED
 						self.bookedTill = hrs*60 + mins
 						self.freeTill = 0
+						badge.sendMail(self.emalID, self.name, "Request to Book for %s mins" % (self.bookedTill) )
 					break
 				else:
 					nop
@@ -224,6 +226,10 @@ class Badge:
 		#hpos = (128 - len(thirdline)*6) / 2  # Center
 		#self.sendStr('o_cursor(%d,6);o_print("%s")' % (hpos, thirdline))
 	def sendMail(self, to,subject, message):
+		if True:
+			time.sleep(1)
+			return
+		print("trying to send mail\n")
 		sender = "placementplusplus@gmail.com"
 		messageFinal = """From: """+sender+"""
 		To: """+to+"""Sumeet Sahu <ssahu@adobe.com>
@@ -243,13 +249,14 @@ class Badge:
 			print "Successfully sent email"
 		except smtplib.SMTPException as e:
 			print "Error: unable to send email" + str(e)
-	def mailHouseKeeping(self):
-		sendMail("vipaggar@adobe.com", "House Keeping", "We messed it up")
-		return
-		
-	
 
-			
+	def mailHouseKeeping(self):
+		self.threeLineRoomStatusDisplay("Sending", "Email To", "Housekeeping")
+		self.sendMail("vipaggar@adobe.com", "House Keeping", "We messed it up")
+		self.threeLineRoomStatusDisplay("", "Mail Sent", "")
+		time.sleep(1)
+		return
+				
 	def displayRoomStatus(self):
 		global room
 		#green = [ 0,30, 0]
@@ -292,7 +299,7 @@ class Badge:
 			elif btn == 2:
 				nop
 			elif btn == 4:
-				nop
+				self.mailHouseKeeping()
 			elif btn == 8:
 				room.occupy()
 				nop
@@ -303,11 +310,15 @@ class Badge:
 		elif room.state == State.BOOKED_UNOCCUPIED:
 			if btn == 8:
 				room.occupy()
-			if btn == 16:
+			elif btn == 4:
+				self.mailHouseKeeping()
+			elif btn == 16:
 				room.freeUp()
 		elif room.state == State.BOOKED_OCCUPIED:
 			if btn == 16:
 				room.freeUp()
+			elif btn == 4:
+				self.mailHouseKeeping()
 
 def getButtonPress(badge):
 	btnPressed = -1
@@ -347,7 +358,6 @@ def doStuff():
 	
 	while True:
 		badge.displayRoomStatus()
-		
 		btnPressed = getButtonPress(badge)
 		if btnPressed != -1:
 			#debugPrint("Reached here\n")
