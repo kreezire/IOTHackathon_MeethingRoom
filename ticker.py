@@ -14,12 +14,13 @@ stocks = ['AAPL','GOOG','ADBE','MSFT','AMZN','TWTR','ADSK','VFINX','NVDA','TXN']
 
 # Where to open a connection to the badge
 # See https://wiki.corp.adobe.com/pages/viewpage.action?spaceKey=tech2017&title=How+to+Reuse+the+IoT+Badge
-badge_serial_port = 'COM6'
+badge_serial_port = 'COM3'
 
 class State:
 	FREE = 1
-	BOOKED_OCCUPIED = 2
-	BOOKED_UNOCCUPIED = 3
+	BOOKING_CURRENTLY = 2
+	BOOKED_OCCUPIED = 3
+	BOOKED_UNOCCUPIED = 4
 	
 class Mode:
 	DEBUG = 1
@@ -60,6 +61,7 @@ def loadQuotes():
 	return stockDict
 
 freeScreenMsg = ["1 to Book", "3 for Housekeeping", ""]
+bookingCurrentlyScreenMsg = [ "2 to add time", "3 to dec time", "4 to book"]
 bookedUnoccupiedScreenMsg = ["1 mails attendees", "3 for Housekeeping", "4 to Occupy"]
 bookedOccupiedScreenMsg = ["1 mails attendees", "3 for Housekeeping", "5 to Free"]
 
@@ -76,6 +78,8 @@ class MeetingRoom:
 		helpMsg = []
 		if self.state == State.FREE:
 			helpMsg = freeScreenMsg
+		elif self.state == State.BOOKING_CURRENTLY:
+			helpMsg = bookingCurrentlyScreenMsg
 		elif self.state == State.BOOKED_UNOCCUPIED:
 			helpMsg = bookedUnoccupiedScreenMsg;
 		elif self.state == State.BOOKED_OCCUPIED:
@@ -100,10 +104,13 @@ class MeetingRoom:
 		mins = 15
 		hrs = 0
 		if self.state == State.FREE:
+			self.state = State.BOOKING_CURRENTLY
 			while True:
 				badge.threeLineRoomStatusDisplay("Enter Time", "%s:%s" % (str(hrs), str(mins)), "2 for + 3 for -")
 				btnPressed = getButtonPress(badge)
-				if btnPressed == 2:
+				if btnPressed == 1:
+					self.help()
+				elif btnPressed == 2:
 					mins = mins + 15
 					if mins == 60:
 						mins = 0
@@ -117,7 +124,7 @@ class MeetingRoom:
 							hrs -= 1
 				elif btnPressed == 8:
 					if (hrs*60 + mins) > self.freeTill:
-						badge.threeLineRoomStatusDisplay("Available for", "%s hrs :%s mins " % (str(self.freeTill/60), str(self.freeTill%60)), "Please Try Again")
+						badge.threeLineRoomStatusDisplaySmall("Available for", "%s hrs :%s mins " % (str(self.freeTill/60), str(self.freeTill%60)), "Please Try Again")
 						time.sleep(1)
 					else:
 						self.state = State.BOOKED_UNOCCUPIED
@@ -251,7 +258,7 @@ class Badge:
 		#hpos = (128 - len(thirdline)*6) / 2  # Center
 		#self.sendStr('o_cursor(%d,6);o_print("%s")' % (hpos, thirdline))
 	def sendMail(self, to,subject, message):
-		if False:
+		if True:
 			time.sleep(1)
 			return
 		print("trying to send mail\n")
