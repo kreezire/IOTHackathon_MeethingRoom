@@ -6,7 +6,9 @@
 
 import re, string, time, urllib, os, sys, time
 import csv, urllib, StringIO, serial
-
+import smtplib
+from email.MIMEMultipart import MIMEMultipart
+from email.MIMEText import MIMEText
 # List of stocks you want to display (keep it <= 20)
 stocks = ['AAPL','GOOG','ADBE','MSFT','AMZN','TWTR','ADSK','VFINX','NVDA','TXN']
 
@@ -63,7 +65,7 @@ class MeetingRoom:
 		self.state = State.FREE
 		self.freeTill = self.getFreeTime()
 		self.bookedTill = 0
-		
+		self.emalID="vipaggar@adobe.com"
 	def setName(self, str):
 		self.name = str
 		
@@ -206,10 +208,47 @@ class Badge:
 			self.blink([0,0,0])
 			
 	def threeLineRoomStatusDisplay(self, firstline, secondline, thirdline):
+
 		hpos1 = (128 - len(firstline)*12) / 2  # Center
 		hpos2 = (128 - len(secondline)*12) / 2  # Center
 		hpos3 = (128 - len(thirdline)*6) / 2  # Center
 		self.sendStr('o_clear;o_font("sys5x7");o_2x;o_cursor(%d,0);o_print("%s");o_cursor(%d,3);o_print("%s");o_1x;o_cursor(%d,6);o_print("%s")'%(hpos1, firstline,hpos2,secondline,hpos3,thirdline))		
+
+		
+		#self.sendStr('o_clear;o_font("sys5x7");o_2x')
+		#hpos = (128 - len(firstline)*12) / 2  # Center
+		#self.sendStr('o_cursor(%d,0);o_print("%s")' % (hpos, firstline))
+		#hpos = (128 - len(secondline)*12) / 2  # Center
+		#self.sendStr('o_cursor(%d,3);o_print("%s")' % (hpos, secondline))	
+		#self.sendStr('o_1x')
+		#hpos = (128 - len(thirdline)*6) / 2  # Center
+		#self.sendStr('o_cursor(%d,6);o_print("%s")' % (hpos, thirdline))
+	def sendMail(self, to,subject, message):
+		sender = "placementplusplus@gmail.com"
+		messageFinal = """From: """+sender+"""
+		To: """+to+"""Sumeet Sahu <ssahu@adobe.com>
+		MIME-Version: 1.0
+		Content-type: text/html
+		Subject: """+subject+"""
+		
+		"""+message+"""
+		"""
+		try:
+			smtpObj = smtplib.SMTP('smtp.gmail.com', 587)	
+			smtpObj.ehlo()
+			smtpObj.starttls()
+			smtpObj.login("placementplusplus@gmail.com", "naveenpadepoopoo")
+			#print 23
+			smtpObj.sendmail(sender, [to], message)        
+			print "Successfully sent email"
+		except smtplib.SMTPException as e:
+			print "Error: unable to send email" + str(e)
+	def mailHouseKeeping(self):
+		sendMail("vipaggar@adobe.com", "House Keeping", "We messed it up")
+		return
+		
+	
+
 			
 	def displayRoomStatus(self):
 		global room
