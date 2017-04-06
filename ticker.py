@@ -4,7 +4,7 @@
 # J. Peterson, March 2017
 #
 
-import re, string, time, urllib, os, sys
+import re, string, time, urllib, os, sys, time
 import csv, urllib, StringIO, serial
 
 # List of stocks you want to display (keep it <= 20)
@@ -90,10 +90,10 @@ class MeetingRoom:
 						mins = 0
 						hrs += 1
 				elif btnPressed == 4:
-					if mins > 15:
+					if mins >= 15:
 						mins = mins - 15
 					else:
-						if hrs > 1:
+						if hrs >= 1:
 							mins = 45
 							hrs -= 1
 				elif btnPressed == 8:
@@ -136,7 +136,7 @@ class Badge:
 	def __init__(self):
 		self.port = serial.Serial(badge_serial_port, baudrate=9600,timeout=1)
 		self.lastreply = self.port.read(100)
-		
+		self.sendStr("clear; rgb(-1,0,0,0)")
 
 	def sendStr(self, s):
 		self.port.write(s + '\r')
@@ -192,20 +192,7 @@ class Badge:
 		self.sendStr('o_1x;o_cursor(0,7);o_print("%s")' % quote.name)
 		hpos = 128 - len(quote.change)*6		# Right justify
 		self.sendStr('o_cursor(%d,2);o_print("%s")' % (hpos, quote.change))
-		
-		
-		
-		try:
-			change = float(quote.change)
-			price = float(quote.price)
-			mustchange = 0.5 / 100
-			if (abs(change)/price < mustchange):	# Looking for more than mustchange% change
-				self.blink(yellow)
-			else:
-				self.blink( green if (change > 0) else red )
-		except ValueError:
-			self.blink(blue)
-	
+			
 	def setBothLEDColor(self, color):
 		try:
 			#change = float(quote.change)
@@ -219,15 +206,10 @@ class Badge:
 			self.blink([0,0,0])
 			
 	def threeLineRoomStatusDisplay(self, firstline, secondline, thirdline):
-		
-		self.sendStr('o_clear;o_font("sys5x7");o_2x')
-		hpos = (128 - len(firstline)*12) / 2  # Center
-		self.sendStr('o_cursor(%d,0);o_print("%s")' % (hpos, firstline))
-		hpos = (128 - len(secondline)*12) / 2  # Center
-		self.sendStr('o_cursor(%d,3);o_print("%s")' % (hpos, secondline))	
-		self.sendStr('o_1x')
-		hpos = (128 - len(thirdline)*6) / 2  # Center
-		self.sendStr('o_cursor(%d,6);o_print("%s")' % (hpos, thirdline))
+		hpos1 = (128 - len(firstline)*12) / 2  # Center
+		hpos2 = (128 - len(secondline)*12) / 2  # Center
+		hpos3 = (128 - len(thirdline)*6) / 2  # Center
+		self.sendStr('o_clear;o_font("sys5x7");o_2x;o_cursor(%d,0);o_print("%s");o_cursor(%d,3);o_print("%s");o_1x;o_cursor(%d,6);o_print("%s")'%(hpos1, firstline,hpos2,secondline,hpos3,thirdline))		
 			
 	def displayRoomStatus(self):
 		global room
@@ -243,16 +225,11 @@ class Badge:
 		elif room.state == State.BOOKED_OCCUPIED or room.state == State.BOOKED_UNOCCUPIED:
 			if room.state == State.BOOKED_OCCUPIED:
 				self.setBothLEDColor(ColorCode.red)
+				self.threeLineRoomStatusDisplay(room.name, "Booked", "Till %s hrs %s mins" % (str(room.bookedTill/60), str(room.bookedTill%60)))
 			else:
 				self.setBothLEDColor(ColorCode.yellow)
-			#self.bookedDisplayIter=(self.bookedDisplayIter+1)%2
-			#if self.bookedDisplayIter<1:
-			self.threeLineRoomStatusDisplay(room.name, "Booked", "Till %s hrs %s mins" % (str(room.bookedTill/60), str(room.bookedTill%60)))
-			#	self.sendStr('o_clear;o_font("sys5x7");o_1x')
-			#	hpos = 0  # Center
-				#self.sendStr('o_cursor(%d,0);o_print("%s")' % (hpos, room.getMeetingName()))
-			
-		time.sleep(2)
+				self.threeLineRoomStatusDisplay(room.name, "Booked", "Press 4 to occupy")			
+		time.sleep(1)
 			
 	def display(self, status, room):
 		self.sendStr("o_2x")
@@ -295,10 +272,25 @@ class Badge:
 
 def getButtonPress(badge):
 	btnPressed = -1
+	prevTime = getCurTime()
 	while True:
+		temp = getCurTime()
+		if  (temp - prevTime) > 5:
+			if room.state == State.FREE:
+				room.freeTill -= 1
+				if room.freeTill == 0:
+					room.state = State.BOOKED_UNOCCUPIED
+					room.bookedTill = 60
+			elif room.state == State.BOOKED_OCCUPIED or room.state == State.BOOKED_UNOCCUPIED:
+				room.bookedTill -= 1
+				if room.bookedTill == 0:
+					room.state = State.FREE
+					room.freeTill = room.getFreeTime()
+			badge.displayRoomStatus()
+			prevTime = temp
 		ret = badge.sendStr("print buttons")
 		l = ret.split('\n')
-		if l > 0:
+		if len(l) > 1:
 			if l[1].find('>') == -1:
 				btnPressed = int(l[1])
 				debugPrint("return val = %d\n" % btnPressed)
@@ -306,12 +298,17 @@ def getButtonPress(badge):
 					break
 	return btnPressed
 
+def getCurTime():
+	return int(time.time())
+
 badge = Badge()
 
 def doStuff():
 	global badge
+	
 	while True:
 		badge.displayRoomStatus()
+		
 		btnPressed = getButtonPress(badge)
 		if btnPressed != -1:
 			#debugPrint("Reached here\n")
