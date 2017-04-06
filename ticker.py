@@ -191,20 +191,22 @@ class Badge:
 		#yellow =[30,15, 0]
 		#blue  = [ 0, 0,30]
 		if room.state == State.FREE:
-			self.bookedDisplayIter=0
-			self.threeLineRoomStatusDisplay(room.name, "Free", "Till "+room.statusTill)
 			self.setBothLEDColor(ColorCode.green)
+			#self.bookedDisplayIter=0
+			self.threeLineRoomStatusDisplay(room.name, "Free", "Till "+room.statusTill)
+			
 		elif room.state == State.BOOKED_OCCUPIED or room.state == BOOKED_UNOCCUPIED:
+			if room.state == State.BOOKED_OCCUPIED:
+				self.setBothLEDColor(ColorCode.red)
+			else:
+				self.setBothLEDColor(ColorCode.yellow)
 			#self.bookedDisplayIter=(self.bookedDisplayIter+1)%2
 			#if self.bookedDisplayIter<1:
 			self.threeLineRoomStatusDisplay(room.name, "Booked", "Till "+room.statusTill)
 			#	self.sendStr('o_clear;o_font("sys5x7");o_1x')
 			#	hpos = 0  # Center
 				#self.sendStr('o_cursor(%d,0);o_print("%s")' % (hpos, room.getMeetingName()))
-			if room.state == State.BOOKED_OCCUPIED:
-				self.setBothLEDColor(ColorCode.red)
-			else:
-				self.setBothLEDColor(ColorCode.yellow)
+			
 		time.sleep(2)
 			
 	def display(self, status, room):
