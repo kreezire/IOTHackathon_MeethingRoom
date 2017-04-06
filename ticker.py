@@ -59,6 +59,10 @@ def loadQuotes():
 ##		stockDict[q].dump()
 	return stockDict
 
+freeScreenMsg = ["1 to Book", "3 for Housekeeping", ""]
+bookedUnoccupiedScreenMsg = ["1 mails attendees", "3 for Housekeeping", "4 to Occupy"]
+bookedOccupiedScreenMsg = ["1 mails attendees", "3 for Housekeeping", "5 to Free"]
+
 class MeetingRoom:
 	def __init__(self):
 		self.name = "EKLAVYA"
@@ -67,6 +71,18 @@ class MeetingRoom:
 		self.bookedTill = 0
 		self.emalID="vipaggar@adobe.com"
 		
+	def help(self):
+		global badge
+		helpMsg = []
+		if self.state == State.FREE:
+			helpMsg = freeScreenMsg
+		elif self.state == State.BOOKED_UNOCCUPIED:
+			helpMsg = bookedUnoccupiedScreenMsg;
+		elif self.state == State.BOOKED_OCCUPIED:
+			helpMsg = bookedOccupiedScreenMsg;
+		badge.threeLineRoomStatusDisplaySmall(helpMsg[0], helpMsg[1], helpMsg[2])
+		time.sleep(2)
+			
 	def setName(self, str):
 		self.name = str
 		
@@ -108,6 +124,7 @@ class MeetingRoom:
 						self.bookedTill = hrs*60 + mins
 						self.freeTill = 0
 						mess = "Request to Book for "+ str(self.bookedTill) +" mins."
+						badge.threeLineRoomStatusDisplay("Trying to", "book", self.name)
 						badge.sendMail([self.emalID], self.name, mess)
 					break
 				else:
@@ -210,6 +227,13 @@ class Badge:
 		except ValueError:
 			self.blink([0,0,0])
 			
+	def threeLineRoomStatusDisplaySmall(self, firstline, secondline, thirdline):
+
+		hpos1 = (128 - len(firstline)*6) / 2  # Center
+		hpos2 = (128 - len(secondline)*6) / 2  # Center
+		hpos3 = (128 - len(thirdline)*6) / 2  # Center
+		self.sendStr('o_clear;o_font("sys5x7");o_1x;o_cursor(%d,0);o_print("%s");o_cursor(%d,3);o_print("%s");o_1x;o_cursor(%d,6);o_print("%s")'%(hpos1, firstline,hpos2,secondline,hpos3,thirdline))	
+			
 	def threeLineRoomStatusDisplay(self, firstline, secondline, thirdline):
 
 		hpos1 = (128 - len(firstline)*12) / 2  # Center
@@ -303,7 +327,7 @@ class Badge:
 			if btn == 1:
 				room.tryBook()
 			elif btn == 2:
-				nop
+				room.help()
 			elif btn == 4:
 				self.mailHouseKeeping()
 			elif btn == 8:
@@ -315,6 +339,8 @@ class Badge:
 		elif room.state == State.BOOKED_UNOCCUPIED:
 			if btn == 1:
 				self.emailAttendees()
+			if btn == 2:
+				room.help()
 			elif btn == 8:
 				room.occupy()
 			elif btn == 4:
@@ -326,9 +352,13 @@ class Badge:
 				self.emailAttendees()
 			elif btn == 16:
 				room.freeUp()
+			if btn == 2:
+				room.help()
 			elif btn == 4:
 				self.mailHouseKeeping()
-
+			elif btn == 16:
+				room.freeUp()
+			
 def getButtonPress(badge):
 	btnPressed = -1
 	prevTime = getCurTime()
