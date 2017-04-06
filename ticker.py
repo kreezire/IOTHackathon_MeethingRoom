@@ -14,7 +14,7 @@ stocks = ['AAPL','GOOG','ADBE','MSFT','AMZN','TWTR','ADSK','VFINX','NVDA','TXN']
 
 # Where to open a connection to the badge
 # See https://wiki.corp.adobe.com/pages/viewpage.action?spaceKey=tech2017&title=How+to+Reuse+the+IoT+Badge
-badge_serial_port = 'COM3'
+badge_serial_port = 'COM6'
 
 class State:
 	FREE = 1
@@ -107,7 +107,8 @@ class MeetingRoom:
 						self.state = State.BOOKED_UNOCCUPIED
 						self.bookedTill = hrs*60 + mins
 						self.freeTill = 0
-						badge.sendMail(self.emalID, self.name, "Request to Book for %s mins" % (self.bookedTill) )
+						mess = "Request to Book for "+ str(self.bookedTill) +" mins."
+						badge.sendMail([self.emalID], self.name, mess)
 					break
 				else:
 					nop
@@ -226,13 +227,12 @@ class Badge:
 		#hpos = (128 - len(thirdline)*6) / 2  # Center
 		#self.sendStr('o_cursor(%d,6);o_print("%s")' % (hpos, thirdline))
 	def sendMail(self, to,subject, message):
-		if True:
+		if False:
 			time.sleep(1)
 			return
 		print("trying to send mail\n")
 		sender = "placementplusplus@gmail.com"
 		messageFinal = """From: """+sender+"""
-		To: """+to+"""Sumeet Sahu <ssahu@adobe.com>
 		MIME-Version: 1.0
 		Content-type: text/html
 		Subject: """+subject+"""
@@ -245,14 +245,14 @@ class Badge:
 			smtpObj.starttls()
 			smtpObj.login("placementplusplus@gmail.com", "naveenpadepoopoo")
 			#print 23
-			smtpObj.sendmail(sender, [to], message)        
+			smtpObj.sendmail(sender, to, message)        
 			print "Successfully sent email"
 		except smtplib.SMTPException as e:
 			print "Error: unable to send email" + str(e)
 
 	def mailHouseKeeping(self):
 		self.threeLineRoomStatusDisplay("Sending", "Email To", "Housekeeping")
-		self.sendMail("vipaggar@adobe.com", "House Keeping", "We messed it up")
+		self.sendMail(["vipaggar@adobe.com"], "House Keeping", "We messed it up")
 		self.threeLineRoomStatusDisplay("", "Mail Sent", "")
 		time.sleep(1)
 		return
@@ -290,7 +290,13 @@ class Badge:
 		self.sendStr("clr")
 		self.sendStr('o_font("sys5x7")')
 		self.display(room.state, room)
-		
+	def emailAttendees(self):
+		self.threeLineRoomStatusDisplay("Sending", "Email To", "Attendees")
+		self.sendMail(["vipaggar@adobe.com", "gupta1@adobe.com"], "Meeting", "Meeting reminder.")
+		self.threeLineRoomStatusDisplay("", "Mail Sent", "")
+		time.sleep(1)
+		return
+					
 	def buttonPressed(self, btn):
 		global room
 		if room.state == State.FREE:
@@ -301,21 +307,24 @@ class Badge:
 			elif btn == 4:
 				self.mailHouseKeeping()
 			elif btn == 8:
-				room.occupy()
 				nop
 			elif btn == 16:
 				room.freeUp()
 			else:
 				nop
 		elif room.state == State.BOOKED_UNOCCUPIED:
-			if btn == 8:
+			if btn == 1:
+				self.emailAttendees()
+			elif btn == 8:
 				room.occupy()
 			elif btn == 4:
 				self.mailHouseKeeping()
 			elif btn == 16:
 				room.freeUp()
 		elif room.state == State.BOOKED_OCCUPIED:
-			if btn == 16:
+			if btn == 1:
+				self.emailAttendees()
+			elif btn == 16:
 				room.freeUp()
 			elif btn == 4:
 				self.mailHouseKeeping()
