@@ -183,6 +183,11 @@ class Badge:
 		self.sendStr('o_1x')
 		hpos = (128 - len(thirdline)*6) / 2  # Center
 		self.sendStr('o_cursor(%d,6);o_print("%s")' % (hpos, thirdline))
+		
+	def mailHouseKeeping()
+	{
+		
+	}
 			
 	def displayRoomStatus(self):
 		global room
