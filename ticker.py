@@ -12,7 +12,7 @@ stocks = ['AAPL','GOOG','ADBE','MSFT','AMZN','TWTR','ADSK','VFINX','NVDA','TXN']
 
 # Where to open a connection to the badge
 # See https://wiki.corp.adobe.com/pages/viewpage.action?spaceKey=tech2017&title=How+to+Reuse+the+IoT+Badge
-badge_serial_port = 'COM3'
+badge_serial_port = 'COM6'
 
 class State:
 	FREE = 1
@@ -83,11 +83,16 @@ class MeetingRoom:
 		
 room = MeetingRoom()
 room.setName('EKLAVYA')
-
+class ColorCode:
+	green = [ 0,30, 0]
+	red =   [30, 0, 0]
+	yellow =[30,15, 0]
+	blue  = [ 0, 0,30]
 class Badge:
 	def __init__(self):
 		self.port = serial.Serial(badge_serial_port, baudrate=9600,timeout=1)
 		self.lastreply = self.port.read(100)
+		
 
 	def sendStr(self, s):
 		self.port.write(s + '\r')
@@ -128,11 +133,13 @@ class Badge:
 		self.sendStr('rgb(0,0,0,0);rgb(1,0,0,0)')
 
 	def blink(self,rgb):
-		self.led(0,rgb)
-		time.sleep(0.3)
-		self.sendStr('rgb(0,0,0,0);rgb(1,%d,%d,%d)' % (rgb[0],rgb[1],rgb[2]))
-		time.sleep(0.3)
-		self.ledsOff()
+		#self.led(0,rgb)
+		#self.led(1,rgb)
+		self.sendStr('rgb(0,%d,%d,%d);rgb(1,%d,%d,%d)' % (rgb[0],rgb[1],rgb[2],rgb[0],rgb[1],rgb[2]))
+		#time.sleep(0.3)
+		#self.sendStr('rgb(0,0,0,0);rgb(1,%d,%d,%d)' % (rgb[0],rgb[1],rgb[2]))
+		#time.sleep(0.3)
+		#self.ledsOff()
 		
 	def displayQuote(self,quote):
 		self.sendStr('o_clear;o_font("sys5x7");o_2x;o_cursor(0,1);o_print("%s")' % quote.sym)
@@ -142,10 +149,7 @@ class Badge:
 		hpos = 128 - len(quote.change)*6		# Right justify
 		self.sendStr('o_cursor(%d,2);o_print("%s")' % (hpos, quote.change))
 		
-		green = [ 0,30, 0]
-		red =   [30, 0, 0]
-		yellow =[30,15, 0]
-		blue  = [ 0, 0,30]
+		
 		
 		try:
 			change = float(quote.change)
@@ -157,7 +161,18 @@ class Badge:
 				self.blink( green if (change > 0) else red )
 		except ValueError:
 			self.blink(blue)
-			
+	
+	def setBothLEDColor(self, color):
+		try:
+			#change = float(quote.change)
+			#price = float(quote.price)
+			#mustchange = 0.5 / 100
+			#if (abs(change)/price < mustchange):	# Looking for more than mustchange% change
+			self.blink(color)
+			#else:
+			#	self.blink( green if (change > 0) else red )
+		except ValueError:
+			self.blink([0,0,0])
 	def threeLineRoomStatusDisplay(self, firstline, secondline, thirdline):
 		
 		self.sendStr('o_clear;o_font("sys5x7");o_2x')
@@ -171,10 +186,14 @@ class Badge:
 			
 	def displayRoomStatus(self):
 		global room
-		
+		#green = [ 0,30, 0]
+		#red =   [30, 0, 0]
+		#yellow =[30,15, 0]
+		#blue  = [ 0, 0,30]
 		if room.state == State.FREE:
 			self.bookedDisplayIter=0
 			self.threeLineRoomStatusDisplay(room.name, "Free", "Till "+room.statusTill)
+			self.setBothLEDColor(ColorCode.green)
 		elif room.state == State.BOOKED_OCCUPIED or room.state == BOOKED_UNOCCUPIED:
 			#self.bookedDisplayIter=(self.bookedDisplayIter+1)%2
 			#if self.bookedDisplayIter<1:
@@ -182,6 +201,10 @@ class Badge:
 			#	self.sendStr('o_clear;o_font("sys5x7");o_1x')
 			#	hpos = 0  # Center
 				#self.sendStr('o_cursor(%d,0);o_print("%s")' % (hpos, room.getMeetingName()))
+			if room.state == State.BOOKED_OCCUPIED:
+				self.setBothLEDColor(ColorCode.red)
+			else:
+				self.setBothLEDColor(ColorCode.yellow)
 		time.sleep(2)
 			
 	def display(self, status, room):
