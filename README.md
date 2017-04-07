@@ -12,8 +12,8 @@ Not easy to book meeting rooms currently. It’s a tedious process. This device 
 
 Badge is supposed to be hanging on the outside of meeting room's door. It has following functionalities:
 * Generic Function:
- * User can press a button to call housekeeping staff to clean the room. An e-mail is sent to housekeeping department with location details.
- * There is help button on each page (where ever appropriate).
+	* User can press a button to call housekeeping staff to clean the room. An e-mail is sent to housekeeping department with location details.
+	* There is help button on each page (where ever appropriate).
  
 * If room is free:
  * This is indicated by green LED lights. 
