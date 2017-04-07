@@ -24,6 +24,8 @@ class Mode:
 	DEBUG = 1
 	EXPORT = 2
 
+otpEnabled = True
+
 mode = Mode.EXPORT
 
 def debugPrint(str):
@@ -37,12 +39,16 @@ bookedUnoccupiedScreenMsg = ["1 mails attendees", "3 for Housekeeping", "4 to Oc
 bookedOccupiedScreenMsg = ["1 mails attendees", "3 for Housekeeping", "5 to Free"]
 
 class MeetingRoom:
-	def __init__(self):
+	def __init__(self, st):
 		self.name = "EKLAVYA"
-		self.state = State.FREE
-		self.freeTill = self.getFreeTime()
-		self.bookedTill = 0
+		#self.state = State.FREE
+		self.state = st
+		if self.state == State.FREE:
+			self.freeTill = self.getFreeTime()
+		else:
+			self.bookedTill = self.getFreeTime()
 		self.emalID="vipaggar@adobe.com"
+		self.OTP = "1234"
 		
 	def help(self):
 		global badge
@@ -65,7 +71,24 @@ class MeetingRoom:
 		self.time = int(num)
 		
 	def occupy(self):
-		self.state = State.BOOKED_OCCUPIED
+		if otpEnabled:
+			badge.threeLineRoomStatusDisplay("Enter OTP", "", "Use Buttons")
+			digitsRcvd = 0
+			otp = ""
+			btnMap = { 1:1, 2:2, 4:3, 8:4, 16:5 }
+			while digitsRcvd < 4:
+				btnPressed = getButtonPress(badge)
+				otp += str(btnMap[btnPressed])
+				digitsRcvd += 1
+				badge.threeLineRoomStatusDisplay("Enter OTP", otp, "Use Buttons")
+			if otp == self.OTP:
+				self.state = State.BOOKED_OCCUPIED
+			else:
+				badge.threeLineRoomStatusDisplay("Wrong OTP", "Try Again", "")
+				time.sleep(2)
+			return
+		else:
+			self.state = State.BOOKED_OCCUPIED
 		
 	def getFreeTime(self):
 		return int(60)
@@ -122,9 +145,19 @@ class MeetingRoom:
 	def convertTime(self):
 		self.minutes = self.time %60
 		self.hours = self.time/60
-		
-room = MeetingRoom()
-room.setName('EKLAVYA')
+
+cmdArgs = sys.argv
+if len(cmdArgs) > 1:
+	if cmdArgs[1] == "booked":
+		room = MeetingRoom(State.BOOKED_UNOCCUPIED)
+	elif cmdArgs[1] == "free":
+		room = MeetingRoom(State.FREE)
+	else:
+		room = MeetingRoom(State.FREE)
+	room.setName('EKLAVYA')
+else:
+	room = MeetingRoom(State.FREE)
+	room.setName('EKLAVYA')
 
 class ColorCode:
 	green = [ 0,30, 0]
@@ -204,6 +237,10 @@ class Badge:
 			#	self.blink( green if (change > 0) else red )
 		except ValueError:
 			self.blink([0,0,0])
+			
+	def centerLineDisplay(self, line):
+		hpos = (128 - len(line)*6) / 2  # Center
+		self.sendStr('o_clear;o_font("sys5x7");o_2x;o_cursor(%d,3);o_print("%s")'%(hpos, line))	
 			
 	def threeLineRoomStatusDisplaySmall(self, firstline, secondline, thirdline):
 
@@ -334,13 +371,17 @@ class Badge:
 				self.mailHouseKeeping()
 			elif btn == 16:
 				room.freeUp()
-			
+
+timeDelay = 0
 def getButtonPress(badge):
+	global timeDelay
 	btnPressed = -1
 	prevTime = getCurTime()
 	while True:
 		temp = getCurTime()
-		if  (temp - prevTime) > 5:
+		if  (temp - prevTime) > timeDelay:
+			if timeDelay == 0:
+				timeDelay = 5
 			if room.state == State.FREE:
 				room.freeTill -= 1
 				if room.freeTill == 0:
