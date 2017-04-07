@@ -319,17 +319,15 @@ class Badge:
 				self.emailAttendees()
 			if btn == 2:
 				room.help()
-			elif btn == 8:
-				room.occupy()
 			elif btn == 4:
 				self.mailHouseKeeping()
+			elif btn == 8:
+				room.occupy()
 			elif btn == 16:
 				room.freeUp()
 		elif room.state == State.BOOKED_OCCUPIED:
 			if btn == 1:
 				self.emailAttendees()
-			elif btn == 16:
-				room.freeUp()
 			if btn == 2:
 				room.help()
 			elif btn == 4:
