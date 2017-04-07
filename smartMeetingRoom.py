@@ -12,7 +12,7 @@ from email.MIMEText import MIMEText
 
 # Where to open a connection to the badge
 # See https://wiki.corp.adobe.com/pages/viewpage.action?spaceKey=tech2017&title=How+to+Reuse+the+IoT+Badge
-badge_serial_port = 'COM6'
+badge_serial_port = 'COM3'
 
 class State:
 	FREE = 1
@@ -127,7 +127,7 @@ class MeetingRoom:
 						mess = "Request to Book for "+ str(self.bookedTill) +" mins."
 						badge.threeLineRoomStatusDisplay("Trying to", "book", self.name)
 						badge.sendMail([self.emalID], self.name, mess)
-					break
+						break
 				else:
 					nop
 			
