@@ -12,7 +12,7 @@ from email.MIMEText import MIMEText
 
 # Where to open a connection to the badge
 # See https://wiki.corp.adobe.com/pages/viewpage.action?spaceKey=tech2017&title=How+to+Reuse+the+IoT+Badge
-badge_serial_port = 'COM4'
+badge_serial_port = 'COM6'
 
 class State:
 	FREE = 1
@@ -136,6 +136,16 @@ class MeetingRoom:
 		self.bookedTill = 0
 		self.freeTill = self.getFreeTime()
 		
+	def requestFreeUp(self):
+		badge.threeLineRoomStatusDisplay("Sending", "Mail To", "Organizer")
+		badge.sendMail("vipaggar@adobe.com", "Request to free.", "Give me some room here!")
+		badge.threeLineRoomStatusDisplay("Request", "Sent", "")
+		time.sleep(2)
+		badge.displayRoomStatus()
+		time.sleep(5)
+		self.state = State.FREE
+		self.bookedTill = 0
+		self.freeTill = self.getFreeTime()
 	def updateRoomStatus(self):
 		nop
 		
@@ -266,9 +276,7 @@ class Badge:
 		#hpos = (128 - len(thirdline)*6) / 2  # Center
 		#self.sendStr('o_cursor(%d,6);o_print("%s")' % (hpos, thirdline))
 	def sendMail(self, to,subject, message):
-		if True:
-			time.sleep(1)
-			return
+		
 		print("trying to send mail\n")
 		sender = "placementplusplus@gmail.com"
 		messageFinal = """From: """+sender+"""
@@ -288,6 +296,8 @@ class Badge:
 			print "Successfully sent email"
 		except smtplib.SMTPException as e:
 			print "Error: unable to send email" + str(e)
+		except:
+			return
 
 	def mailHouseKeeping(self):
 		self.threeLineRoomStatusDisplay("Sending", "Email To", "Housekeeping")
@@ -361,7 +371,7 @@ class Badge:
 			elif btn == 8:
 				room.occupy()
 			elif btn == 16:
-				room.freeUp()
+				room.requestFreeUp()
 		elif room.state == State.BOOKED_OCCUPIED:
 			if btn == 1:
 				self.emailAttendees()
