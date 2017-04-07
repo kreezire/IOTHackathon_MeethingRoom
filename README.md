@@ -33,3 +33,11 @@ Badge is supposed to be hanging on the outside of meeting room's door. It has fo
 	* It shows the time till it is booked.
 	* User (organizer/meeting attendees) can press a button to free the room. This is helpful in-case meeting gets cancelled or ends sooner than planned.
 	* User can press a button to send a meeting reminder to all attendees.
+	
+## Future Enhancements
+
+* In future RFID will replace many button-related operations in current implementation.
+	* Authentication will be  Adobe badge RFID based.
+	* If the room is free, user can book the room by simply taping adobe badge.
+
+* Tweaking the bluetooth on the badge firmware so that the serial USB connection is not required. duh!
