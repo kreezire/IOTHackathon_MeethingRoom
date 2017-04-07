@@ -16,20 +16,20 @@ Badge is supposed to be hanging on the outside of meeting room's door. It has fo
 	* There is help button on each page (where ever appropriate).
  
 * If room is free:
- * This is indicated by green LED lights. 
- * It shows the time till it is free. That is the time before next meeting starts.
- * User can book meeting room for any duration which can selected on the device. Duration should be greater than zero and less than or equal to total time before next meeting.
- * Room gets instantly booked by sending mails to appropriate IDs.
+	* This is indicated by green LED lights. 
+	* It shows the time till it is free. That is the time before next meeting starts.
+	* User can book meeting room for any duration which can selected on the device. Duration should be greater than zero and less than or equal to total time before next meeting.
+	* Room gets instantly booked by sending mails to appropriate IDs.
 
 * If room is booked but unoccupied:
- * This is indicated by yellow LED lights. 
- * It shows the time till it is booked.
- * User can press button and mark it as "occupied" after providing suitable authentication. Currently authentication is OTP based. This OTP is provided while booking the room to the organizer and attendees.
- * If the room is unoccupied for long and someone (non-attendee) wants to book the room, he/she can press a button to request the room to be freed. This sends a mail to meeting organizer to free the room.
- * User can press a button to send a meeting reminder to all attendees.
+	* This is indicated by yellow LED lights. 
+	* It shows the time till it is booked.
+	* User can press button and mark it as "occupied" after providing suitable authentication. Currently authentication is OTP based. This OTP is provided while booking the room to the organizer and attendees.
+	* If the room is unoccupied for long and someone (non-attendee) wants to book the room, he/she can press a button to request the room to be freed. This sends a mail to meeting organizer to free the room.
+	* User can press a button to send a meeting reminder to all attendees.
  
 * If room is booked and occupied:
- * This is indicated by red LED lights.
- * It shows the time till it is booked.
- * User (organizer/meeting attendees) can press a button to free the room. This is helpful in-case meeting gets cancelled or ends sooner than planned.
- * User can press a button to send a meeting reminder to all attendees.
+	* This is indicated by red LED lights.
+	* It shows the time till it is booked.
+	* User (organizer/meeting attendees) can press a button to free the room. This is helpful in-case meeting gets cancelled or ends sooner than planned.
+	* User can press a button to send a meeting reminder to all attendees.
