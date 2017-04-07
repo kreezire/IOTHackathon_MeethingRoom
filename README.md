@@ -1,1 +1,3 @@
 # IOTHackathon_MeethingRoom
+
+Not easy to book meeting rooms currently. It’s a tedious process. This device will be hanging at the door of the meeting rooms. If the room is booked the device will display so. Else it will display as empty. The room could be booked for a specified duration by a single button press on the device. Also, sometimes people book the room but don’t use. There would be an occupy button on the device which the users would press upon entering the booked room and a free button which they would press upon leaving the room. Hence, if the user doesn’t use the room, the room can be freed after a certain time or a request can be sent to the meeting organizer to let go of the room in case the user doesn’t require it anymore.
